@@ -1,0 +1,67 @@
+Section1
+    Course Description
+
+        Teach common network programming techniques by examples
+        Focus on server-side TCP network programming on Linux
+        Walk-through code in C++, Python and Go
+
+    Prerequisites
+
+        Have read Unix Network Programming volume 1 (either 2nd ed. or 3rd ed.) by late W. Richard Stevens
+        Know basics of TCP/IP, eg. IP addresses, ports,
+        Know how to write an echo server with basic sockets APIs in any language
+
+    Code
+
+        http://github.com/chenshuo/muduo
+        http://github.com/chenshuo/recipes
+        http://github.com/chenshuo/muduo-protorpc
+        http://github.com/chenshuo/muduo-examples-in-go
+
+    本课程强调
+        关注服务端TCP网络编程，不涉及与用户交互部分的客户端
+        可测量的性能
+        避免基于猜测的优化
+    分层网络（程序员关注四层）
+        以太网帧    Ethernet frame
+        IP分组     IP packet    注意与IP分片区别，一般不需要关心分片
+        TCP分节    TCP segment
+        应用层消息  Application message
+    新手的常见错误
+        业务逻辑与网络IO混杂，难于测试
+        消息接受不完整
+        消息边界解析错误
+        发送C struct
+        TCP的自连接
+        非阻塞网络编程中的很多坑
+Section2
+    用nc(netcat)测试TCP吞吐量
+    server:  nc -l 12000 > /dev/null                                 先开启在12000端口等待接受
+    local:   dd if=/dev/zero bs=1MB count=1000 | nc 47.103.xxx.xxx 80        这里是阿里云的公网IP
+    测试出学校带宽为13MiB/s
+
+    测试中有多次数据的拷贝
+    /dev/zero -> dd -> pipe -> nc(l) -> TCP -> nc(s) -> /dev/null   六次拷贝
+    在网速无限制的情况下（也就是本地传本地时）TCP的最大性能应该是这样测出来的3倍（两次拷贝）
+Section3
+    课程计划讲解的实例
+        基本的非并发实例
+            TTCP    经典的TCP性能测试工具
+            Round-trip(UDP) 测量两台机器的时间差
+            Netcat
+            慢速收发工具    
+        并发网络编程
+            socks代理服务器
+            数独求解
+            简单的memcached
+            TCP广播
+        多机器数据处理
+            并行的N皇后问题
+            跨机器的中位数
+            最频繁的查询（课程貌似只讲到了这）
+            分布式排序
+        高级主题
+            RPC
+            负载均衡    比round-robin更好
+            服务系统容量
+            延迟
