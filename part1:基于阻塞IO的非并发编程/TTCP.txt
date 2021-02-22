@@ -1,0 +1,7 @@
+test tcp    测试tcp性能
+关心的性能指标：
+    带宽    MB/s
+    吞吐量  message/s   queries/s(QPS)   transactions/s(TPS)
+    时延    ms      percentiles占多少百分位数的延迟是多少
+    使用率  百分比
+    额外开销    如为了压缩或加密带来的CPU的使用率
