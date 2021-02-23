@@ -99,7 +99,7 @@ static int read_n(int sockfd, void* buf, int length)
   return nread;
 }
 
-void transmit(const Options& opt)
+void transmit(const Options& opt)//客户端
 {
   struct sockaddr_in addr = resolveOrDie(opt.host.c_str(), opt.port);
   printf("connecting to %s:%d\n", inet_ntoa(addr.sin_addr), opt.port);
@@ -144,7 +144,7 @@ void transmit(const Options& opt)
     assert(nw == total_len);
 
     int ack = 0;
-    int nr = read_n(sockfd, &ack, sizeof(ack));
+    int nr = read_n(sockfd, &ack, sizeof(ack));//等待服务端发挥的ack
     assert(nr == sizeof(ack));
     ack = ntohl(ack);
     assert(ack == opt.length);
@@ -153,14 +153,14 @@ void transmit(const Options& opt)
   ::free(payload);
   ::close(sockfd);
   double elapsed = timeDifference(muduo::Timestamp::now(), start);
-  printf("%.3f seconds\n%.3f MiB/s\n", elapsed, total_mb / elapsed);
+  printf("%.3f seconds\n%.3f MiB/s\n", elapsed, total_mb / elapsed);//输出带宽
 }
 
-void receive(const Options& opt)
+void receive(const Options& opt)//服务端
 {
-  int sockfd = acceptOrDie(opt.port);
+  int sockfd = acceptOrDie(opt.port);//接受连接
 
-  struct SessionMessage sessionMessage = { 0, 0 };
+  struct SessionMessage sessionMessage = { 0, 0 };//消息的个数，消息的长度
   if (read_n(sockfd, &sessionMessage, sizeof(sessionMessage)) != sizeof(sessionMessage))
   {
     perror("read SessionMessage");
@@ -171,11 +171,11 @@ void receive(const Options& opt)
   sessionMessage.length = ntohl(sessionMessage.length);
   printf("receive number = %d\nreceive length = %d\n",
          sessionMessage.number, sessionMessage.length);
-  const int total_len = static_cast<int>(sizeof(int32_t) + sessionMessage.length);
-  PayloadMessage* payload = static_cast<PayloadMessage*>(::malloc(total_len));
+  const int total_len = static_cast<int>(sizeof(int32_t) + sessionMessage.length);//总长度
+  PayloadMessage* payload = static_cast<PayloadMessage*>(::malloc(total_len));//获得内存存放消息
   assert(payload);
 
-  for (int i = 0; i < sessionMessage.number; ++i)
+  for (int i = 0; i < sessionMessage.number; ++i)//读取number条消息
   {
     payload->length = 0;
     if (read_n(sockfd, &payload->length, sizeof(payload->length)) != sizeof(payload->length))
@@ -190,14 +190,14 @@ void receive(const Options& opt)
       perror("read payload data");
       exit(1);
     }
-    int32_t ack = htonl(payload->length);
+    int32_t ack = htonl(payload->length);//发挥ack
     if (write_n(sockfd, &ack, sizeof(ack)) != sizeof(ack))
     {
       perror("write ack");
       exit(1);
     }
   }
-  ::free(payload);
+  ::free(payload);//释放内存
   ::close(sockfd);
 }
 /*
@@ -209,6 +209,44 @@ void receive(const Options& opt)
 
 为了让ide不变红还要在setting.json里加上includePath
 */
-int main(){
+int main(int argc, char* argv[]){
     printf("hello muduo!\n");
+    Options client, server;
+    server.host = "127.0.0.1";
+    server.port = 54321;
+    server.receive = true;
+
+    client.host = "127.0.0.1";
+    client.port = 54321;
+    client.number = 50;
+    client.length = 500;
+    client.transmit = true;
+
+    printf("%d\n", atoi(argv[1]));
+    if(0 == atoi(argv[1])){
+        printf("I am server.\n");
+        receive(server);
+    }else{
+        printf("I am client.\n");
+        transmit(client);
+    }
+/*
+开启两个终端分别../bin/ttcp-blocking 0  ../bin/ttcp-blocking 1
+输出如下：
+    服务端:
+    hello muduo!
+    0
+    I am server.
+    receive number = 50
+    receive length = 500
+    客户端:
+    hello muduo!
+    1
+    I am client.
+    connecting to 127.0.0.1:54321
+    connected
+    0.024 MiB in total
+    0.001 seconds
+    18.117 MiB/s
+*/
 }
